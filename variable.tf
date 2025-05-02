@@ -15,3 +15,15 @@ variable "az" {
   type        = list(string)
   default     = []
 }
+
+variable "my-sg" {
+  description = "Name of the security group"
+  type        = string
+  default     = "nayak"
+}
+
+variable "ingress_ports" {
+  description = "List of ingress ports to allow"
+  type        = list(number)
+  default     = [22, 80, 443, 8080]
+}

@@ -90,3 +90,59 @@ resource "aws_route_table_association" "pvt-asso" {
   subnet_id      = aws_subnet.pvt-subnets[count.index].id
   route_table_id = aws_route_table.pvt-rt.id
 }
+
+resource "aws_security_group" "my-sg" {
+  name        = var.my-sg
+  vpc_id      = aws_vpc.my-vpc.id
+  description = "Security group managed by Terraform"
+
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "my-sg-${var.project_name}"
+  }
+}
+
+resource "aws_lb_target_group" "my-tg" {
+  name        = "my-target-group"
+  vpc_id      = aws_vpc.my-vpc.id
+  target_type = "instance"
+  port        = 80
+  protocol    = "HTTP"
+  tags = {
+    Name = "my-tg-${var.project_name}"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "my-tg" {
+  target_group_arn = aws_lb_target_group.my-tg.arn
+  target_id        = aws_instance.app-instance.id
+  port             = 8080
+}
+
+resource "aws_lb" "my-lb" {
+  security_groups    = [aws_security_group.my-sg.id]
+  load_balancer_type = "application"
+  subnets            = aws_subnet.pub-subnets.*.id
+  tags = {
+    Name = "my-lb-${var.project_name}"
+  }
+}
+
+
+
